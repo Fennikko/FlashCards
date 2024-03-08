@@ -226,8 +226,15 @@ public class DatabaseController
         var flashcardId = GetFlashCards("to delete", stackId);
         using var connection = new SqlConnection(ConnectionString);
         var deleteCommand = $"DELETE from flash_cards WHERE FlashcardId = '{flashcardId}'";
+        var flashcardIndexCommand = $"SELECT FlashcardIndex from flash_cards WHERE FlashcardId = '{flashcardId}'";
+        var flashCardIdQuery = connection.Query<FlashCard>(flashcardIndexCommand);
+        var flashcardIndexIdList = flashCardIdQuery.Select(flashcard => flashcard.FlashcardIndex).ToList();
+        var flashCardIndexId = flashcardIndexIdList[0];
         var deleteFlashcard = connection.Execute(deleteCommand);
-        AnsiConsole.Write(new Markup($"[green]{deleteFlashcard}[/] flashcard deleted. Press any key to continue."));
+        var flashCardIndexUpdateCommand = $"UPDATE flash_cards SET FlashcardIndex = FlashCardIndex - 1 WHERE FlashCardIndex > {flashCardIndexId} AND StackId = '{stackId}'";
+        var updateFlashcardIndexes = connection.Execute(flashCardIndexUpdateCommand);
+        AnsiConsole.Write(new Markup($"[green]{deleteFlashcard}[/] flashcard deleted."));
+        AnsiConsole.Write(new Markup($"[green]{updateFlashcardIndexes}[/] flashcard indexes updated. Press any key to continue."));
         Console.ReadKey();
 
     }
