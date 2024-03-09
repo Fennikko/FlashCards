@@ -40,6 +40,7 @@ public class UserInput
                     StudyFlashCards.NewStudySession();
                     break;
                 case "View Study Sessions":
+                    StudyFlashCards.GetStudySessions();
                     break;
                 case "Exit":
                     appRunning = false;

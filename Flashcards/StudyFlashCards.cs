@@ -16,8 +16,6 @@ public class StudyFlashCards
         int score = 0;
         foreach (var flashCard in flashCards)
         {
-            Console.WriteLine($"{flashCard.FlashcardIndex} {flashCard.CardFront} {flashCard.CardBack}");
-
             AnsiConsole.Clear();
             var table = new Table();
             table.Title(new TableTitle("[blue]Study Session[/]"));
@@ -64,5 +62,43 @@ public class StudyFlashCards
         var studySession = connection.Execute(studySessionCreationCommand,newStudySession);
         AnsiConsole.Write(new Markup($"[green]{studySession}[/] study session added. Press any key to continue."));
         Console.ReadKey();
+    }
+
+    public static void GetStudySessions()
+    {
+        using var connection = new SqlConnection(ConnectionString);
+        var stackId = DatabaseController.GetStacks("to view study sessions");
+        var command = $"SELECT * FROM study_sessions WHERE StackId = '{stackId}'";
+        var studySessions = connection.Query<StudySession>(command);
+        var studySessionsList = studySessions.ToList();
+        var stackNameQuery = $"SELECT StackName FROM stacks WHERE StackId = '{stackId}'";
+        var getStackName = connection.Query<string>(stackNameQuery);
+        var stackNameList = getStackName.ToList();
+        var stackName = stackNameList[0];
+        TableCreation(studySessionsList,stackName);
+
+        AnsiConsole.MarkupLine("[blue]Press any key to return to main menu[/]");
+        Console.ReadKey();
+    }
+
+    public static void TableCreation(IEnumerable<StudySession> sessions, string stackName)
+    {
+        AnsiConsole.Clear();
+        var table = new Table();
+        table.Title(new TableTitle($"[green]{stackName}[/][blue] Study Sessions[/]"));
+        table.AddColumn(new TableColumn("[#FFA500]Session Date[/]").Centered());
+        table.AddColumn(new TableColumn("[#104E1D]Score[/]").Centered());
+        var averageScoreList = new List<int>();
+        foreach (var session in sessions)
+        {
+            table.AddRow($"[#3EB489]{session.SessionDate}[/]", $"[#3EB489]{session.SessionScore}[/]");
+            averageScoreList.Add(session.SessionScore);
+        }
+
+        var averageScore = Math.Round(averageScoreList.ToArray().AsQueryable().Average(), 2);
+
+        table.Caption(new TableTitle($"[#87CEEB]Average study session score: {averageScore}[/]"));
+
+        AnsiConsole.Write(table);
     }
 }
