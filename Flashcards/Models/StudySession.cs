@@ -1,4 +1,6 @@
-﻿public class StudySession
+﻿namespace Flashcards.Models;
+
+public class StudySession
 {
     public int StudyId { get; set; }
 

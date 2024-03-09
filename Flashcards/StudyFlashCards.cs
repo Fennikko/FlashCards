@@ -1,8 +1,10 @@
 ﻿using System.Configuration;
 using System.Data.SqlClient;
 using Dapper;
-using Flashcards;
+using Flashcards.Models;
 using Spectre.Console;
+
+namespace Flashcards;
 
 public class StudyFlashCards
 {

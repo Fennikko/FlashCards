@@ -1,5 +1,6 @@
-﻿using Flashcards;
-using Spectre.Console;
+﻿using Spectre.Console;
+
+namespace Flashcards;
 
 public class UserInput
 {

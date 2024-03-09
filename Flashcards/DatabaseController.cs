@@ -1,6 +1,7 @@
 ﻿using System.Configuration;
 using System.Data.SqlClient;
 using Dapper;
+using Flashcards.Models;
 using Spectre.Console;
 
 namespace Flashcards;
@@ -102,9 +103,9 @@ public class DatabaseController
         var getStackIdCommand = $"SELECT StackId from stacks WHERE StackName = '{stackName}'";
         List<int> stackIdList = new List<int>();
         var stackIdQuery = connection.Query<Stack>(getStackIdCommand);
-        foreach (var Id in stackIdQuery)
+        foreach (var id in stackIdQuery)
         {
-            stackIdList.Add(Id.StackId);
+            stackIdList.Add(id.StackId);
         }
         var stackIdArray = stackIdList.ToArray();
         var stackId = stackIdArray[0];
@@ -168,8 +169,8 @@ public class DatabaseController
             using var connection = new SqlConnection(ConnectionString);
             var getFlashCardsCommand = $"SELECT FlashcardIndex FROM flash_cards WHERE StackId = '{stackId}'";
             var getFlashCards = connection.Query<FlashCard>(getFlashCardsCommand);
-            List<int> FlashcardIndexes = getFlashCards.Select(flashCard => flashCard.FlashcardIndex).ToList();
-            var FlashcardIndex = FlashcardIndexes.AsQueryable().LastOrDefault() + 1;
+            List<int> flashcardIndexes = getFlashCards.Select(flashCard => flashCard.FlashcardIndex).ToList();
+            var flashcardIndex = flashcardIndexes.AsQueryable().LastOrDefault() + 1;
             
             var cardFront = AnsiConsole.Prompt(
                 new TextPrompt<string>("Please enter the flash card [green]question[/]: ")
@@ -198,7 +199,7 @@ public class DatabaseController
             var cardCreationCommand =
                 "INSERT INTO flash_cards (FlashcardIndex,CardFront,CardBack,StackId) VALUES (@FlashcardIndex,@CardFront,@CardBack,@StackId)";
             var flashCard = new FlashCard
-                { FlashcardIndex = FlashcardIndex, CardFront = cardFront, CardBack = cardBack, StackId = stackId };
+                { FlashcardIndex = flashcardIndex, CardFront = cardFront, CardBack = cardBack, StackId = stackId };
 
             var cardCreation = connection.Execute(cardCreationCommand, flashCard);
             AnsiConsole.Write(new Markup($"[green]{cardCreation}[/] stack added. Press any key to continue."));
@@ -244,11 +245,10 @@ public class DatabaseController
         var getStacksCommand = "SELECT * FROM stacks";
         var stacks = connection.Query<Stack>(getStacksCommand);
         var stackList = stacks.Select(stack => stack.StackName).ToList();
-        string?[] stackArray = stackList.ToArray();
         var selectStack = AnsiConsole.Prompt(
             new SelectionPrompt<string>()
                 .Title($"Select a [blue]Stack[/] {function}")
-                .PageSize(10)!
+                .PageSize(10)
                 .AddChoices(stackList));
         var getStackIdCommand = $"SELECT StackId from stacks WHERE StackName = '{selectStack}'";
         var stackIdQuery = connection.Query<Stack>(getStackIdCommand);
@@ -268,7 +268,7 @@ public class DatabaseController
         var selectFlashCard = AnsiConsole.Prompt(
             new SelectionPrompt<string>()
                 .Title($"Select a [blue]flash card[/] {function}")
-                .PageSize(10)!
+                .PageSize(10)
                 .AddChoices(flashCardList));
         var getFlashCardIdCommand = $"SELECT FlashcardId FROM flash_cards WHERE CONVERT (VARCHAR, CardFront) = '{selectFlashCard}'";
         var flashCardIdQuery = connection.Query<FlashCard>(getFlashCardIdCommand);
@@ -277,7 +277,7 @@ public class DatabaseController
         return flashCardId;
     }
 
-    public static List<FlashCardDTO> GetAllFlashCards(int stackId)
+    public static List<FlashCardDto> GetAllFlashCards(int stackId)
     {
         using var connection = new SqlConnection(ConnectionString);
         //var stackId = GetStacks("where your flash card resides");
