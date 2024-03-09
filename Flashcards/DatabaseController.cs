@@ -2,7 +2,6 @@
 using System.Data.SqlClient;
 using Dapper;
 using Spectre.Console;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Flashcards;
 
@@ -276,5 +275,16 @@ public class DatabaseController
         var flashcardIdList = flashCardIdQuery.Select(flashcard => flashcard.FlashcardId).ToList();
         var flashCardId = flashcardIdList[0];
         return flashCardId;
+    }
+
+    public static List<FlashCardDTO> GetAllFlashCards(int stackId)
+    {
+        using var connection = new SqlConnection(ConnectionString);
+        //var stackId = GetStacks("where your flash card resides");
+        var getFlashCardsCommand = $"SELECT * FROM flash_cards WHERE StackId = '{stackId}'";
+        var flashCards = connection.Query<FlashCard>(getFlashCardsCommand);
+        var flashCardList = flashCards.ToList();
+        var flashCardDtoList = FlashCardController.MapToDto(flashCardList);
+        return flashCardDtoList;
     }
 }

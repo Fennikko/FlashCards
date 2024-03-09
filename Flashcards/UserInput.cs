@@ -1,5 +1,4 @@
-﻿
-using Flashcards;
+﻿using Flashcards;
 using Spectre.Console;
 
 public class UserInput
@@ -20,7 +19,8 @@ public class UserInput
                     .AddChoices(new[]
                     {
                         "Add a Stack", "Delete a Stack", "Add a Flash Card",
-                        "Delete a Flash Card", "Study Session","Exit"
+                        "Delete a Flash Card", "Study Session","View Study Sessions",
+                        "Exit"
                     }));
             switch (functionSelect)
             {
@@ -37,6 +37,9 @@ public class UserInput
                     DatabaseController.DeleteFlashCard();
                     break;
                 case "Study Session":
+                    StudyFlashCards.NewStudySession();
+                    break;
+                case "View Study Sessions":
                     break;
                 case "Exit":
                     appRunning = false;
