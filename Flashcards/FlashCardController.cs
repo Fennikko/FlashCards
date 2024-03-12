@@ -13,6 +13,7 @@ public class FlashCardController
             CardBack = flashcard.CardBack,
         };
     }
+
     public static List<FlashCardDto> MapToDto(List<FlashCard> flashcards)
     {
         return flashcards.Select(MapToDto).ToList();

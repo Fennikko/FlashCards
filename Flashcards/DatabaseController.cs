@@ -87,30 +87,33 @@ public class DatabaseController
         while (string.IsNullOrWhiteSpace(stackName))
         {
             stackName = AnsiConsole.Prompt(
-                new TextPrompt<string>("Enter a [green] stack name[/] or type 0 to return to the main menu: ")
+                new TextPrompt<string>("[red]Stack name cannot be blank.[/] Enter a [green] stack name[/] or type 0 to return to the main menu: ")
                     .PromptStyle("blue")
                     .AllowEmpty());
             if (stackName == "0") UserInput.GetUserInput();
         }
-
         using var connection = new SqlConnection(ConnectionString);
         var command = "INSERT INTO stacks (StackName) VALUES (@StackName)";
         var stack = new Stack { StackName = stackName };
-        var stackCreation = connection.Execute(command, stack);
-        AnsiConsole.Write(new Markup($"[green]{stackCreation}[/] stack added. Press any key to continue."));
-        Console.ReadKey();
-
-        var getStackIdCommand = $"SELECT StackId from stacks WHERE StackName = '{stackName}'";
-        List<int> stackIdList = new List<int>();
-        var stackIdQuery = connection.Query<Stack>(getStackIdCommand);
-        foreach (var id in stackIdQuery)
+        try
         {
-            stackIdList.Add(id.StackId);
+            var stackCreation = connection.Execute(command, stack);
+            AnsiConsole.Write(new Markup($"[green]{stackCreation}[/] stack added. Press any key to continue."));
+            Console.ReadKey();
         }
-        var stackIdArray = stackIdList.ToArray();
+        catch (SqlException e)
+        {
+            var errorMessage = Convert.ToString(e.Message);
+            AnsiConsole.MarkupLine($"[red]{errorMessage}[/]. Press any key to continue: ");
+            Console.ReadKey();
+            CreateStack();
+        }
+        var getStackIdCommand = $"SELECT StackId from stacks WHERE StackName = '{stackName}'";
+        var stackIdQuery = connection.Query<Stack>(getStackIdCommand);
+        var stackIdArray = stackIdQuery.Select(id => id.StackId).ToArray();
         var stackId = stackIdArray[0];
-
         return stackId;
+
     }
 
     public static void CreateFlashCard()
@@ -158,9 +161,19 @@ public class DatabaseController
             var flashCard = new FlashCard
                 { FlashcardIndex = flashcardIndex, CardFront = cardFront, CardBack = cardBack, StackId = stackId };
 
-            var cardCreation = connection.Execute(cardCreationCommand, flashCard);
-            AnsiConsole.Write(new Markup($"[green]{cardCreation}[/] stack added. Press any key to continue."));
-            Console.ReadKey();
+            try
+            {
+                var cardCreation = connection.Execute(cardCreationCommand, flashCard);
+                AnsiConsole.Write(new Markup($"[green]{cardCreation}[/] stack added. Press any key to continue."));
+                Console.ReadKey();
+            }
+            catch (SqlException e)
+            {
+                var errorMessage = Convert.ToString(e.Message);
+                AnsiConsole.MarkupLine($"[red]{errorMessage}[/]. Press any key to continue: ");
+                Console.ReadKey();
+                CreateFlashCard();
+            }
 
         }
         else
@@ -169,7 +182,7 @@ public class DatabaseController
             using var connection = new SqlConnection(ConnectionString);
             var getFlashCardsCommand = $"SELECT FlashcardIndex FROM flash_cards WHERE StackId = '{stackId}'";
             var getFlashCards = connection.Query<FlashCard>(getFlashCardsCommand);
-            List<int> flashcardIndexes = getFlashCards.Select(flashCard => flashCard.FlashcardIndex).ToList();
+            var flashcardIndexes = getFlashCards.Select(flashCard => flashCard.FlashcardIndex).ToList();
             var flashcardIndex = flashcardIndexes.AsQueryable().LastOrDefault() + 1;
             
             var cardFront = AnsiConsole.Prompt(
@@ -201,9 +214,19 @@ public class DatabaseController
             var flashCard = new FlashCard
                 { FlashcardIndex = flashcardIndex, CardFront = cardFront, CardBack = cardBack, StackId = stackId };
 
-            var cardCreation = connection.Execute(cardCreationCommand, flashCard);
-            AnsiConsole.Write(new Markup($"[green]{cardCreation}[/] stack added. Press any key to continue."));
-            Console.ReadKey();
+            try
+            {
+                var cardCreation = connection.Execute(cardCreationCommand, flashCard);
+                AnsiConsole.Write(new Markup($"[green]{cardCreation}[/] stack added. Press any key to continue."));
+                Console.ReadKey();
+            }
+            catch (Exception e)
+            {
+                var errorMessage = Convert.ToString(e.Message);
+                AnsiConsole.MarkupLine($"[red]{errorMessage}[/]. Press any key to continue: ");
+                Console.ReadKey();
+                CreateFlashCard();
+            }
         }
 
     }
@@ -233,8 +256,8 @@ public class DatabaseController
         var deleteFlashcard = connection.Execute(deleteCommand);
         var flashCardIndexUpdateCommand = $"UPDATE flash_cards SET FlashcardIndex = FlashCardIndex - 1 WHERE FlashCardIndex > {flashCardIndexId} AND StackId = '{stackId}'";
         var updateFlashcardIndexes = connection.Execute(flashCardIndexUpdateCommand);
-        AnsiConsole.Write(new Markup($"[green]{deleteFlashcard}[/] flashcard deleted."));
-        AnsiConsole.Write(new Markup($"[green]{updateFlashcardIndexes}[/] flashcard indexes updated. Press any key to continue."));
+        AnsiConsole.MarkupLine($"[green]{deleteFlashcard}[/] flashcard deleted.");
+        AnsiConsole.MarkupLine($"[green]{updateFlashcardIndexes}[/] flashcard indexes updated. Press any key to continue.");
         Console.ReadKey();
 
     }
@@ -261,7 +284,6 @@ public class DatabaseController
     public static int GetFlashCards(string? function,int stackId)
     {
         using var connection = new SqlConnection(ConnectionString);
-        //var stackId = GetStacks("where your flash card resides");
         var getFlashCardsCommand = $"SELECT * FROM flash_cards WHERE StackId = '{stackId}'";
         var flashCards = connection.Query<FlashCard>(getFlashCardsCommand);
         var flashCardList = flashCards.Select(flashCard => flashCard.CardFront).ToList();
